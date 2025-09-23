@@ -101,6 +101,8 @@ python inference.py --indir <input_directory> --outdir <output_directory> --mode
 │   └── vaegan.py
 ├── pretrained_weight/      # Directory for pretrained model weights
 │   └── your_weight_here
+├── tools/                  # Utility scripts (e.g. K-weighting implementation)
+│   └── filter.py
 ```
 
 ## 4. Model Details
