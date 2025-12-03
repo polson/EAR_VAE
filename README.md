@@ -22,14 +22,24 @@ Why εar-VAE:
 
 ## 1. Installation
 
-Follow these steps to set up the environment and install the necessary dependencies.
+### Option A: Install via pip (Recommended for using Encoder/Decoder modules)
 
-### Installation Steps
+Install directly from GitHub:
+
+```bash
+pip install git+https://github.com/polson/EAR_VAE.git
+```
+
+Then download the pretrained weights from **[Hugging Face](https://huggingface.co/earlab/EAR_VAE)**
+
+### Option B: Clone and install for development
+
+Follow these steps to set up the environment and install the necessary dependencies.
 
 1.  **Clone the repository:**
     ```bash
-    git clone https://github.com/Eps-Acoustic-Revolution-Lab/EAR_VAE.git
-    cd ear_vae
+    git clone https://github.com/polson/EAR_VAE.git
+    cd EAR_VAE
     ```
 
 2.  **Create and activate a conda environment:**
@@ -39,7 +49,7 @@ Follow these steps to set up the environment and install the necessary dependenc
     ```
 
 3.  **Run the installation script:**
-    
+
     This script will install the remaining dependencies.
     ```bash
     bash install_requirements.sh
@@ -48,11 +58,55 @@ Follow these steps to set up the environment and install the necessary dependenc
     - `descript-audio-codec`
     - `alias-free-torch`
     - `ffmpeg < 7` (via conda)
-    
+
 4.  **Download the model weight:**
 
     You could download the model checkpoint from **[Hugging Face](https://huggingface.co/earlab/EAR_VAE)**
 ## 2. Usage
+
+### Using the Encoder and Decoder Modules
+
+After installing via pip, you can use the standalone Encoder and Decoder modules in your Python code:
+
+```python
+import torch
+import torchaudio
+from ear_vae import Encoder, Decoder
+
+# Initialize encoder and decoder
+encoder = Encoder(
+    checkpoint_path='path/to/ear_vae_44k.pyt',
+    config_path='path/to/model_config.json',
+    use_sample=True  # Set to False for deterministic encoding
+)
+decoder = Decoder(
+    checkpoint_path='path/to/ear_vae_44k.pyt',
+    config_path='path/to/model_config.json'
+)
+
+# Load audio
+audio, sr = torchaudio.load('input.wav')
+if sr != 44100:
+    audio = torchaudio.transforms.Resample(sr, 44100)(audio)
+if audio.shape[0] == 1:
+    audio = torch.cat([audio, audio], dim=0)  # Convert to stereo
+audio = audio.unsqueeze(0)  # Add batch dimension
+
+# Encode to latents
+with torch.no_grad():
+    latents = encoder(audio)  # [B, C, T] -> [B, 64, T//1024]
+
+# Decode back to audio
+with torch.no_grad():
+    reconstructed = decoder(latents)  # [B, 64, T] -> [B, 2, T*1024]
+
+# Save reconstructed audio
+torchaudio.save('output.wav', reconstructed.squeeze(0), 44100)
+```
+
+See `example_encoder_decoder.py` for more usage examples including batch processing and latent manipulation.
+
+### Running Inference Script
 
 The `inference.py` script is used to process audio files from an input directory and save the reconstructed audio to an output directory.
 
